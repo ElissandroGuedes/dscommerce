@@ -4,7 +4,10 @@ package com.devsuperior.dscommerce.services;
 import com.devsuperior.dscommerce.dto.ProductDTO;
 import com.devsuperior.dscommerce.entities.Product;
 import com.devsuperior.dscommerce.repositories.ProductRepository;
+import com.devsuperior.dscommerce.services.exceptions.DatabaseException;
+import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,11 +26,8 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductDTO findById(Long id) {
-
-        Optional<Product> result = repository.findById(id);
-        Product product = result.get();
-        ProductDTO dto = new ProductDTO(product);
-        return dto;
+        Product product = repository.findById(id).orElseThrow(() -> new RuntimeException("Recurso não encontrado"));
+        return new ProductDTO(product);
     }
 
     @Transactional(readOnly = true)
@@ -50,30 +50,30 @@ public class ProductService {
 
     @Transactional
     public ProductDTO update(Long id,ProductDTO dto) {
-
         Product entity = repository.getReferenceById(id);
-
         copyDtoToToEntity(dto,entity);
-
         entity = repository.save(entity);
-
         return new ProductDTO(entity);
     }
 
     @Transactional
     public void  delete(Long id) {
-        repository.deleteById(id);
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Recurso não encontrado");
+        }
+        try {
+            repository.deleteById(id);
+        }
+        catch (DataIntegrityViolationException e) {
+            throw new DatabaseException("Falha de integridade referencial");
+        }
     }
 
 
     private void copyDtoToToEntity(ProductDTO dto, Product entity) {
-
         entity.setName(dto.getName());
-
         entity.setDescription(dto.getDescription());
-
         entity.setPrice(dto.getPrice());
-
         entity.setId(dto.getId());
     }
 }

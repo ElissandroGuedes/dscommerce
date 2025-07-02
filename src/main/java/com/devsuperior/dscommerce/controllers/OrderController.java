@@ -3,6 +3,7 @@ package com.devsuperior.dscommerce.controllers;
 import com.devsuperior.dscommerce.dto.OrderDTO;
 import com.devsuperior.dscommerce.dto.ProductDTO;
 import com.devsuperior.dscommerce.dto.ProductMinDTO;
+import com.devsuperior.dscommerce.entities.Order;
 import com.devsuperior.dscommerce.services.OrderService;
 import com.devsuperior.dscommerce.services.ProductService;
 import jakarta.validation.Valid;
@@ -28,6 +29,16 @@ public class OrderController {
     public ResponseEntity<OrderDTO> findById(@PathVariable Long id) {
         OrderDTO dto = service.findById(id);
         return ResponseEntity.ok(dto);
+    }
+
+
+    @PreAuthorize("hasAnyRole('ROLE_CLIENT')")
+    @PostMapping
+    public ResponseEntity<OrderDTO> insert(@Valid @RequestBody OrderDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
 

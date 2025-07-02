@@ -4,6 +4,7 @@ import com.devsuperior.dscommerce.entities.*;
 import com.devsuperior.dscommerce.repositories.OrderItemRepository;
 import com.devsuperior.dscommerce.repositories.OrderRepository;
 import com.devsuperior.dscommerce.repositories.ProductRepository;
+import com.devsuperior.dscommerce.services.exceptions.ForbiddenException;
 import com.devsuperior.dscommerce.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,10 +26,13 @@ public class OrderService {
     @Autowired
     private UserService service;
 
+    @Autowired
+    private AuthService authService;
 
     @Transactional(readOnly = true)
     public OrderDTO findById(Long id) {
-        Order order = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        Order order = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recurso não encontrado"));
+        authService.validateSelfOrAdmin(order.getClient().getId());
         return new OrderDTO(order);
     }
 
